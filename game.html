@@ -499,4 +499,29 @@ function drawInv(){
   for(const q of L.cells){
     const it=inv[q.i];
     box(q,it,sel===q.i);
-    if(it.n>1){x.fillStyle='#fff';x.font='bold 11px sans-ser
+    if(it.n>1){x.fillStyle='#fff';x.font='bold 11px sans-serif';x.textAlign='right';x.fillText('x'+it.n,q.x+q.w-3,q.y+q.h-4)}
+  }
+  if(!inv.length){x.fillStyle='#777';x.font='12px sans-serif';x.textAlign='left';x.fillText('Bos. Mob keserek esya dusur.',L.px+20,L.gy+20)}
+}
+function mini(){
+  const W=150,H=Math.round(W*M.h/M.w),k=W/M.w;
+  const ox=c.width-W-14,oy=14;
+  x.globalAlpha=.85;
+  x.fillStyle=M.bg;x.fillRect(ox,oy,W,H);
+  x.globalAlpha=1;
+  x.fillStyle=M.soil;
+  for(const q of M.plots)x.fillRect(ox+q.x*k,oy+q.y*k,q.w*k,q.h*k);
+  x.fillStyle='rgba(200,0,0,.5)';
+  x.beginPath();x.arc(ox+M.safe.x*k,oy+M.safe.y*k,M.safe.r*k,0,6.28);x.fill();
+  x.fillStyle='#f33';
+  for(const q of M.portals)x.fillRect(ox+q.x*k-2,oy+q.y*k,Math.max(4,q.w*k),q.h*k);
+  x.fillStyle='#e22';
+  for(const m of mobs)x.fillRect(ox+m.x*k-1.5,oy+m.y*k-1.5,3,3);
+  x.fillStyle='#fc0';
+  for(const s of allies)x.fillRect(ox+s.x*k-1,oy+s.y*k-1,2,2);
+  x.fillStyle='#fff';x.strokeStyle='#000';x.lineWidth=1.5;
+  x.beginPath();x.arc(ox+p.x*k,oy+p.y*k,4,0,6.28);x.fill();x.stroke();
+  x.strokeStyle='#fc0';x.lineWidth=2;x.strokeRect(ox,oy,W,H);
+}
+requestAnimationFrame(loop);
+</script></body></html>
