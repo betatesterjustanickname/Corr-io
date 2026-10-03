@@ -2,18 +2,65 @@
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>corr.io</title>
-<style>body{margin:0;background:#1a1a1a;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}canvas{display:block}</style>
+<style>body{margin:0;background:#111;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}canvas{display:block}</style>
 </head><body><canvas id="c"></canvas>
 <script>
 const c=document.getElementById('c'),x=c.getContext('2d');
 function rs(){c.width=innerWidth;c.height=innerHeight}rs();onresize=rs;
-const WORLD=2000,CAP=10;
-let p,mobs,allies,pet,kills,t=0,spawnT=0,mx=0,my=0,mouseB=0,R=55;
+const CAP=10;
+const MAPS={
+ bahce:{
+  name:'KOLHOZ BAHCESI',sub:'Ortak emek, ortak cicek',
+  w:1800,h:1200,bg:'#3d6b3a',seed:7,
+  soil:'#5a4326',row:'#43301b',flowers:['#d22','#fc0','#fff'],
+  grid:{x0:120,y0:100,dx:280,dy:260,nx:6,ny:4,w:200,h:140},
+  safe:{x:900,y:600,r:150},
+  maxMobs:18,mobHp:30,mobSpeed:80,mobDmg:10,
+  portals:[{x:1760,y:500,w:40,h:200,to:'tarla',tx:170,ty:700,label:'ORTAK TARLA >'}]
+ },
+ tarla:{
+  name:'ORTAK TARLA',sub:'Plan fazlasiyla tutturuldu',
+  w:2200,h:1400,bg:'#a8903f',seed:21,
+  soil:'#c9a93f',row:'#8d7426',flowers:['#c00','#fc0','#6a3'],
+  grid:{x0:300,y0:100,dx:300,dy:260,nx:7,ny:5,w:220,h:150},
+  safe:{x:170,y:700,r:110},
+  maxMobs:26,mobHp:60,mobSpeed:95,mobDmg:14,
+  portals:[{x:0,y:600,w:40,h:200,to:'bahce',tx:1630,ty:600,label:'< KOLHOZ BAHCESI'}]
+ }
+};
+let M,mapId,p,mobs,allies,pet,kills,zoneT=0,t=0,spawnT=0,mx=0,my=0,mouseB=0,R=55;
 const ptrs=new Map(),keys={};
+function near(px,py,pw,ph,cx,cy,r){return cx>px-r&&cx<px+pw+r&&cy>py-r&&cy<py+ph+r}
+function build(m){
+  if(m.built)return;
+  m.plots=[];m.fl=[];
+  const g=m.grid;
+  for(let i=0;i<g.nx;i++)for(let j=0;j<g.ny;j++){
+    const px=g.x0+i*g.dx,py=g.y0+j*g.dy,cx=px+g.w/2,cy=py+g.h/2;
+    if(Math.hypot(cx-m.safe.x,cy-m.safe.y)<m.safe.r+170)continue;
+    let bad=false;
+    for(const q of m.portals)if(near(q.x,q.y,q.w,q.h,cx,cy,200))bad=true;
+    if(bad)continue;
+    m.plots.push({x:px,y:py,w:g.w,h:g.h});
+  }
+  let s=m.seed;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+  for(let i=0;i<80;i++){
+    const fx=40+rnd()*(m.w-80),fy=40+rnd()*(m.h-80);
+    if(Math.hypot(fx-m.safe.x,fy-m.safe.y)<m.safe.r+20)continue;
+    m.fl.push({x:fx,y:fy,c:m.flowers[Math.floor(rnd()*m.flowers.length)],r:4+rnd()*3});
+  }
+  m.built=true;
+}
+function loadMap(id,px,py){
+  mapId=id;M=MAPS[id];build(M);
+  p.x=px;p.y=py;mobs=[];zoneT=3.5;spawnT=1;
+  for(const s of allies){s.x=px+(Math.random()-.5)*80;s.y=py+(Math.random()-.5)*80}
+}
 function reset(){
-  p={x:1000,y:1000,hp:100,max:100};
-  mobs=[];allies=[];kills=0;
+  p={x:0,y:0,hp:100,max:100};
+  allies=[];kills=0;
   pet=[{k:'basic'},{k:'basic'},{k:'our'},{k:'stal',life:6,broke:0},{k:'basic'}];
+  loadMap('bahce',MAPS.bahce.safe.x,MAPS.bahce.safe.y);
 }
 reset();
 function btns(){return{a:{x:c.width-80,y:c.height-90,r:52},d:{x:c.width-195,y:c.height-65,r:42}}}
@@ -36,25 +83,44 @@ onpointerup=onpointercancel=e=>{
   ptrs.delete(e.pointerId);
 };
 function nearest(o,list){let b=null,bd=1e9;for(const m of list){const d=Math.hypot(m.x-o.x,m.y-o.y);if(d<bd){bd=d;b=m}}return b}
+function inSafe(o,pad){return Math.hypot(o.x-M.safe.x,o.y-M.safe.y)<M.safe.r+(pad||0)}
 function loop(now){
-  const dt=Math.min(0.05,(now-(loop.l||now))/1000);loop.l=now;t+=dt;
+  const dt=Math.min(0.05,(now-(loop.l||now))/1000);loop.l=now;t+=dt;zoneT-=dt;
   const vals=[...ptrs.values()];
   const atk=!!(mouseB&1)||!!keys.Space||vals.includes('atk');
   const def=!atk&&(!!(mouseB&2)||!!keys.ShiftLeft||!!keys.ShiftRight||vals.includes('def'));
   const moving=vals.includes('move')||(mx||my)&&ptrs.size===0&&mouseB>=0&&matchMedia('(pointer:fine)').matches;
   const dx=mx-c.width/2,dy=my-c.height/2,d=Math.hypot(dx,dy);
   if(moving&&d>12){p.x+=dx/d*220*dt;p.y+=dy/d*220*dt}
-  p.x=Math.max(0,Math.min(WORLD,p.x));p.y=Math.max(0,Math.min(WORLD,p.y));
-  p.hp=Math.min(p.max,p.hp+2*dt);
+  p.x=Math.max(0,Math.min(M.w,p.x));p.y=Math.max(0,Math.min(M.h,p.y));
+  // gecit
+  for(const q of M.portals){
+    if(near(q.x,q.y,q.w,q.h,p.x,p.y,10)){loadMap(q.to,q.tx,q.ty);break}
+  }
+  const safe=inSafe(p,0);
+  p.hp=Math.min(p.max,p.hp+(safe?15:2)*dt);
+  // mob dogurma
   spawnT-=dt;
-  if(spawnT<=0&&mobs.length<25){
-    spawnT=1.2;const a=Math.random()*6.28,r=500+Math.random()*300;
-    mobs.push({x:Math.max(0,Math.min(WORLD,p.x+Math.cos(a)*r)),y:Math.max(0,Math.min(WORLD,p.y+Math.sin(a)*r)),hp:30,r:16,inv:0});
+  if(spawnT<=0&&mobs.length<M.maxMobs){
+    spawnT=1.2;
+    for(let k=0;k<6;k++){
+      const a=Math.random()*6.28,r=450+Math.random()*350;
+      const sx=Math.max(20,Math.min(M.w-20,p.x+Math.cos(a)*r)),sy=Math.max(20,Math.min(M.h-20,p.y+Math.sin(a)*r));
+      if(inSafe({x:sx,y:sy},120))continue;
+      let onPortal=false;
+      for(const q of M.portals)if(near(q.x,q.y,q.w,q.h,sx,sy,80))onPortal=true;
+      if(onPortal)continue;
+      mobs.push({x:sx,y:sy,hp:M.mobHp,max:M.mobHp,r:16,inv:0});break;
+    }
   }
   for(const m of mobs){
     m.inv-=dt;
-    if(Math.hypot(p.x-m.x,p.y-m.y)<450){const a=Math.atan2(p.y-m.y,p.x-m.x);m.x+=Math.cos(a)*80*dt;m.y+=Math.sin(a)*80*dt}
-    if(Math.hypot(p.x-m.x,p.y-m.y)<m.r+14)p.hp-=10*dt;
+    if(!safe&&Math.hypot(p.x-m.x,p.y-m.y)<450){const a=Math.atan2(p.y-m.y,p.x-m.x);m.x+=Math.cos(a)*M.mobSpeed*dt;m.y+=Math.sin(a)*M.mobSpeed*dt}
+    // guvenli bolgeye girmesin
+    const sd=Math.hypot(m.x-M.safe.x,m.y-M.safe.y);
+    if(sd<M.safe.r+m.r){const a=Math.atan2(m.y-M.safe.y,m.x-M.safe.x);m.x=M.safe.x+Math.cos(a)*(M.safe.r+m.r);m.y=M.safe.y+Math.sin(a)*(M.safe.r+m.r)}
+    m.x=Math.max(0,Math.min(M.w,m.x));m.y=Math.max(0,Math.min(M.h,m.y));
+    if(!safe&&Math.hypot(p.x-m.x,p.y-m.y)<m.r+14)p.hp-=M.mobDmg*dt;
   }
   const RT=atk?95:def?28:55;
   R+=(RT-R)*Math.min(1,dt*10);
@@ -98,21 +164,59 @@ function loop(now){
   if(p.hp<=0)reset();
   draw(atk,def);requestAnimationFrame(loop);
 }
+function star(cx,cy,Ro,ri){
+  x.beginPath();
+  for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rad=i%2?ri:Ro;x.lineTo(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad)}
+  x.closePath();
+}
 function draw(atk,def){
   const cx=p.x-c.width/2,cy=p.y-c.height/2;
-  x.fillStyle='#3d6b3a';x.fillRect(0,0,c.width,c.height);
-  x.strokeStyle='rgba(0,0,0,.12)';x.lineWidth=1;
-  for(let g=0;g<=WORLD;g+=100){
-    x.beginPath();x.moveTo(g-cx,-cy);x.lineTo(g-cx,WORLD-cy);x.stroke();
-    x.beginPath();x.moveTo(-cx,g-cy);x.lineTo(WORLD-cx,g-cy);x.stroke();
+  x.fillStyle='#111';x.fillRect(0,0,c.width,c.height);
+  x.fillStyle=M.bg;x.fillRect(-cx,-cy,M.w,M.h);
+  // izgara
+  x.strokeStyle='rgba(0,0,0,.10)';x.lineWidth=1;
+  for(let g=0;g<=M.w;g+=100){x.beginPath();x.moveTo(g-cx,-cy);x.lineTo(g-cx,M.h-cy);x.stroke()}
+  for(let g=0;g<=M.h;g+=100){x.beginPath();x.moveTo(-cx,g-cy);x.lineTo(M.w-cx,g-cy);x.stroke()}
+  // tarlalar
+  for(const q of M.plots){
+    const px=q.x-cx,py=q.y-cy;
+    if(px>c.width||py>c.height||px+q.w<0||py+q.h<0)continue;
+    x.fillStyle=M.soil;x.fillRect(px,py,q.w,q.h);
+    x.strokeStyle=M.row;x.lineWidth=3;
+    for(let yy=12;yy<q.h;yy+=18){x.beginPath();x.moveTo(px+6,py+yy);x.lineTo(px+q.w-6,py+yy);x.stroke()}
+    x.strokeStyle='#2a1c0d';x.lineWidth=4;x.strokeRect(px,py,q.w,q.h);
   }
-  x.strokeStyle='#000';x.lineWidth=4;x.strokeRect(-cx,-cy,WORLD,WORLD);
+  // cicekler
+  for(const f of M.fl){
+    x.fillStyle=f.c;x.beginPath();x.arc(f.x-cx,f.y-cy,f.r,0,6.28);x.fill();
+    x.fillStyle='#000';x.beginPath();x.arc(f.x-cx,f.y-cy,1.5,0,6.28);x.fill();
+  }
+  // guvenli bolge (Kizil Yildiz meydani)
+  const sx=M.safe.x-cx,sy=M.safe.y-cy;
+  x.fillStyle='rgba(200,0,0,.18)';x.beginPath();x.arc(sx,sy,M.safe.r,0,6.28);x.fill();
+  x.strokeStyle='#fc0';x.lineWidth=4;x.setLineDash([14,10]);x.beginPath();x.arc(sx,sy,M.safe.r,0,6.28);x.stroke();x.setLineDash([]);
+  x.fillStyle='#c00';x.strokeStyle='#fc0';x.lineWidth=4;star(sx,sy,Math.min(48,M.safe.r*0.45),Math.min(20,M.safe.r*0.19));x.fill();x.stroke();
+  // sinir
+  x.strokeStyle='#a00';x.lineWidth=10;x.strokeRect(-cx,-cy,M.w,M.h);
+  x.strokeStyle='#fc0';x.lineWidth=2;x.strokeRect(-cx+6,-cy+6,M.w-12,M.h-12);
+  // gecitler
+  for(const q of M.portals){
+    const px=q.x-cx,py=q.y-cy;
+    x.globalAlpha=.65+.25*Math.sin(t*4);
+    x.fillStyle='#c00';x.fillRect(px,py,q.w,q.h);
+    x.globalAlpha=1;
+    x.strokeStyle='#fc0';x.lineWidth=4;x.strokeRect(px,py,q.w,q.h);
+    x.fillStyle='#fc0';x.font='bold 14px sans-serif';x.textAlign='center';
+    const lx=Math.max(80,Math.min(M.w-80,q.x+q.w/2))-cx;
+    x.fillText(q.label,lx,py-10);
+  }
+  // moblar
   for(const m of mobs){
     x.fillStyle='#b22';x.beginPath();x.arc(m.x-cx,m.y-cy,m.r,0,6.28);x.fill();
     x.fillStyle='#000';
     for(const o of [[-6,-4],[6,-4],[0,6]]){x.beginPath();x.arc(m.x-cx+o[0],m.y-cy+o[1],3,0,6.28);x.fill()}
     x.fillStyle='#000';x.fillRect(m.x-cx-16,m.y-cy-m.r-9,32,4);
-    x.fillStyle='#e33';x.fillRect(m.x-cx-16,m.y-cy-m.r-9,32*Math.max(0,m.hp/30),4);
+    x.fillStyle='#e33';x.fillRect(m.x-cx-16,m.y-cy-m.r-9,32*Math.max(0,m.hp/m.max),4);
   }
   for(const s of allies){
     x.fillStyle='#600';x.strokeStyle='#fc0';x.lineWidth=2;
@@ -148,6 +252,17 @@ function draw(atk,def){
   const s=pet.find(q=>q.k==='stal');
   x.fillStyle='#fc0';
   x.fillText(s.broke>0?'STALINIUM(fake): kirildi '+Math.ceil(s.broke)+'s':'STALINIUM(fake): '+s.life.toFixed(1)+'s',20,90);
+  x.fillStyle='#fcc';x.font='13px sans-serif';
+  x.fillText('Bolge: '+M.name,20,112);
+  // bolge basligi
+  if(zoneT>0){
+    x.globalAlpha=Math.min(1,zoneT);
+    x.textAlign='center';
+    x.font='bold 42px sans-serif';x.fillStyle='#800';x.fillText(M.name,c.width/2+3,143);
+    x.fillStyle='#fc0';x.fillText(M.name,c.width/2,140);
+    x.font='italic 18px sans-serif';x.fillStyle='#fdd';x.fillText(M.sub,c.width/2,168);
+    x.globalAlpha=1;
+  }
   // butonlar
   const B=btns();
   for(const [k,b,on,txt] of [['a',B.a,atk,'SALDIR'],['d',B.d,def,'SAVUN']]){
