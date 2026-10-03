@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>corr.io</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#3d6b3a;font-family:sans-serif;color:#fff;overflow:hidden}
+.grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,0,0,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.12) 1px,transparent 1px);background-size:50px 50px}
+.box{position:relative;text-align:center;padding:20px}
+.orbit{position:relative;width:170px;height:170px;margin:0 auto 14px;animation:spin 6s linear infinite}
+.me{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;background:#ffe066;border:4px solid #b8962e;border-radius:50%}
+.pt{position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px;border-radius:50%;border:3px solid #bbb;background:#fff}
+.pt.our{background:#c00;border-color:#fc0}
+.pt.stal{background:#400;border-color:#fc0}
+@keyframes spin{to{transform:rotate(360deg)}}
+h1{margin:0;font-size:64px;color:#fc0;text-shadow:3px 3px 0 #800,0 0 20px rgba(0,0,0,.5);letter-spacing:2px}
+.tag{margin:6px 0 26px;font-size:18px;color:#fdd;font-style:italic}
+.play{display:inline-block;background:#c00;color:#fff;border:4px solid #fc0;border-radius:14px;padding:14px 56px;font-size:28px;font-weight:bold;text-decoration:none;box-shadow:0 5px 0 #600}
+.play:active{transform:translateY(4px);box-shadow:0 1px 0 #600}
+.how{margin:26px auto 0;max-width:340px;font-size:14px;color:#ddd;line-height:1.5}
+.note{margin-top:18px;font-size:11px;color:#bbb}
+</style></head><body>
+<div class="grid"></div>
+<div class="box">
+  <div class="orbit">
+    <div class="me"></div>
+    <div class="pt" style="transform:rotate(0deg) translate(68px)"></div>
+    <div class="pt our" style="transform:rotate(72deg) translate(68px)"></div>
+    <div class="pt" style="transform:rotate(144deg) translate(68px)"></div>
+    <div class="pt stal" style="transform:rotate(216deg) translate(68px)"></div>
+    <div class="pt" style="transform:rotate(288deg) translate(68px)"></div>
+  </div>
+  <h1>corr.io</h1>
+  <div class="tag">its OUR web &#9733;</div>
+  <a class="play" href="game.html">OYNA</a>
+  <div class="how">Telefon: parmağınla sürükleyerek hareket et, SALDIR ve SAVUN butonlarını kullan.<br>PC: sol tık / Space saldırır, sağ tık / Shift savunur.</div>
+  <div class="note">Hayran yapımı parodi. florr.io ile bağlantısı yoktur.</div>
+</div>
+</body></html>
