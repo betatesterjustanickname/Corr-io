@@ -4,6 +4,50 @@
 <title>corr.io</title>
 <style>body{margin:0;background:#111;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}canvas{display:block}</style>
 </head><body><canvas id="c"></canvas>
+ <div id="ld" style="position:fixed;inset:0;z-index:99;background:#7a0000;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;color:#fc0;text-align:center;padding:20px;transition:opacity .5s">
+<div id="ldstar" style="font-size:72px;animation:ldspin 1.6s linear infinite">&#9733;</div>
+<div style="font-size:44px;font-weight:bold;letter-spacing:2px;text-shadow:3px 3px 0 #400">corr.io</div>
+<div id="ldtxt" style="margin-top:12px;font-size:18px;color:#fdd">Yukleniyor...</div>
+<div id="ldbar" style="margin-top:16px;width:220px;height:14px;border:3px solid #fc0;border-radius:8px;overflow:hidden"><div id="ldfill" style="width:0;height:100%;background:#fc0;transition:width .3s"></div></div>
+<div id="lderr" style="display:none;margin-top:18px;max-width:420px;font-size:18px;color:#fff;line-height:1.4"></div>
+<div id="lddet" style="display:none;margin-top:10px;max-width:420px;font-size:11px;color:#e99"></div>
+</div>
+<style>@keyframes ldspin{to{transform:rotate(360deg)}}</style>
+<script>
+(function(){
+  var failed=false,f=document.getElementById('ldfill');
+  function fail(msg){
+    failed=true;
+    var ld=document.getElementById('ld');
+    ld.style.display='flex';ld.style.opacity='1';
+    document.getElementById('ldstar').style.animation='none';
+    document.getElementById('ldbar').style.display='none';
+    document.getElementById('ldtxt').style.display='none';
+    var e=document.getElementById('lderr');
+    e.style.display='block';
+    e.textContent='there is a bug in the codes or something developer trying to fix sorry :(';
+    var d=document.getElementById('lddet');
+    d.style.display='block';d.textContent=msg||'';
+  }
+  window.addEventListener('error',function(e){fail(e.message+' (satir '+e.lineno+')')});
+  window.addEventListener('unhandledrejection',function(e){fail(String(e.reason))});
+  var w=10;
+  var iv=setInterval(function(){w=Math.min(90,w+8);if(f)f.style.width=w+'%'},150);
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      clearInterval(iv);
+      var ok=!failed&&typeof loop==='function'&&typeof M!=='undefined'&&M;
+      if(!ok){fail('oyun kodu baslatilamadi');return}
+      if(f)f.style.width='100%';
+      setTimeout(function(){
+        var ld=document.getElementById('ld');
+        ld.style.opacity='0';
+        setTimeout(function(){ld.style.display='none'},500);
+      },250);
+    },900);
+  });
+})();
+</script>
 <script>
 const c=document.getElementById('c'),x=c.getContext('2d');
 function rs(){c.width=innerWidth;c.height=innerHeight}rs();onresize=rs;
