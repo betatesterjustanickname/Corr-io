@@ -37,7 +37,7 @@
     setTimeout(function(){
       clearInterval(iv);
       var ok=!failed&&typeof loop==='function'&&typeof M!=='undefined'&&M;
-      if(!ok){fail('oyun kodu baslatilamadi');return}
+      if(!ok){if(!failed)fail('oyun kodu baslatilamadi');return}
       if(f)f.style.width='100%';
       setTimeout(function(){
         var ld=document.getElementById('ld');
