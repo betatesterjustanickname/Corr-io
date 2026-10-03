@@ -275,8 +275,7 @@ function draw(atk,def){
   x.fillStyle='#ddd';x.font='12px sans-serif';x.textAlign='left';
   x.fillText('Parmak: hareket | PC: sol tik/Space saldir, sag tik/Shift savun',20,c.height-20);
 }
-requestAnimationFrame(loop);
-</script></body></html>
+requestAnimationFrame(loop) 
 
 // MINI HARITA
 const _d=draw;
@@ -301,3 +300,4 @@ function mini(){
   x.beginPath();x.arc(ox+p.x*k,oy+p.y*k,4,0,6.28);x.fill();x.stroke();
   x.strokeStyle='#fc0';x.lineWidth=2;x.strokeRect(ox,oy,W,H);
 }
+</script></body></html>
